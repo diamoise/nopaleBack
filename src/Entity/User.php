@@ -11,6 +11,9 @@ use Symfony\Bridge\Doctrine\Validator\Constraints\UniqueEntity;
 
 /**
  * @ORM\Entity(repositoryClass=UserRepository::class)
+ * * @ORM\InheritanceType("JOINED")
+* @ORM\DiscriminatorColumn(name="type", type="string")
+* @ORM\DiscriminatorMap({"user" = "User", "administrateur" = "SuperAdmin"})
  * @UniqueEntity(
      *fields = {"username", "email", "telephone"},
      *message = "l'email, le username ou le numéro de téléphone est est déjà utilisé, veuillez choisir un autre"
@@ -62,7 +65,7 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     private $email;
 
     /**
-     * @ORM\Column(type="blob")
+     * @ORM\Column(type="blob", nullable=true)
      */
     private $photo;
 
