@@ -22,7 +22,10 @@ class SuperAdminFixtures extends Fixture implements DependentFixtureInterface
 
         $faker = Factory::create('fr_FR');
         $password="Nop@LEweDev221++";
+        $prenoms = ['papa djiby', 'abdoulaye', 'it-ops'];
+        $noms = ['niang', 'faye', 'it-ops'];
         $userName = ['papadjibyniang@innovdigital.sn', 'abdoulaye.faye@innovdigital.sn', 'it-ops@innovidital.sn'];
+        $telephones = [773731936, 772159696,772159696];
         for ($i=0; $i <3 ; $i++) { 
             $admin=new SuperAdmin();
             //$profil = new Profil();
