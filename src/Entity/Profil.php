@@ -6,9 +6,37 @@ use App\Repository\ProfilRepository;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
+use Symfony\Component\Validator\Constraints as Assert;
+use Symfony\Bridge\Doctrine\Validator\Constraints\UniqueEntity;
+use Symfony\Component\Serializer\Annotation\Groups;
+use ApiPlatform\Core\Annotation\ApiResource;
+
 
 /**
  * @ORM\Entity(repositoryClass=ProfilRepository::class)
+ * @UniqueEntity(fields="libelle",message="Le libelle des profils doit être unique")
+ * @ApiResource(
+ *      collectionOperations=
+ *          {
+ *                   "GET"={
+ *                          "path"="/admin/profils"
+ *                          },
+ *                    "POST"={"path"="/admin/profils"},
+ *          },
+ *       itemOperations=
+ *          {
+ *                   "get_profil"=
+ *                          {
+ *                             "method"="GET",
+ *                              "path"="/admin/profils/{id}"
+ *                           },
+ *                   "update_profile"=
+ *                           {
+ *                            "method"="put",
+ *                            "path"="/admin/profils/{id}"
+ *                           }
+ *          }
+ * )
  */
 class Profil
 {
@@ -20,7 +48,8 @@ class Profil
     private $id;
 
     /**
-     * @ORM\Column(type="string", length=255)
+     * @ORM\Column(type="string", length=50)
+     * @Assert\NotBlank(message="le libellé du profil ne doit pas être null")
      */
     private $libelle;
 

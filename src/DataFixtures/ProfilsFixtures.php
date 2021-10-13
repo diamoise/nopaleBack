@@ -9,11 +9,13 @@ class ProfilsFixtures extends Fixture
 {
     public function load(ObjectManager $manager): void
     {
+        $UsersProfiles=['Super_Admin','Distributeur'];
+        foreach ($UsersProfiles as $Oneprofile) {
         $profil = new Profil();
-            $profil->setLibelle("Super Admin");
+        $profil->setLibelle($Oneprofile);
         $manager->persist($profil);
-        $this->setReference("Super Admin",$profil);
-        $manager->persist($profil);
+        $this->setReference($Oneprofile,$profil);        
+        }
         $manager->flush();     
     }
 }
