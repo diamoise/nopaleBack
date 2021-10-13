@@ -2,22 +2,54 @@
 
 namespace App\Entity;
 
-use App\Repository\UserRepository;
 use Doctrine\ORM\Mapping as ORM;
-use Symfony\Component\Security\Core\User\PasswordAuthenticatedUserInterface;
+use App\Repository\UserRepository;
+use ApiPlatform\Core\Annotation\ApiFilter;
+use ApiPlatform\Core\Annotation\ApiResource;
+use Symfony\Component\Serializer\Annotation\Groups;
+use Symfony\Component\Validator\Constraints as Assert;
 use Symfony\Component\Security\Core\User\UserInterface;
 use Symfony\Bridge\Doctrine\Validator\Constraints\UniqueEntity;
-use Symfony\Component\Validator\Constraints as Assert;
+use Symfony\Component\Security\Core\User\PasswordAuthenticatedUserInterface;
+use ApiPlatform\Core\Bridge\Doctrine\Orm\Filter\SearchFilter;
+
+
 
 
 
 
 /**
  * @ORM\Entity(repositoryClass=UserRepository::class)
+ * * @ORM\InheritanceType("JOINED")
+* @ORM\DiscriminatorColumn(name="type", type="string")
+* @ORM\DiscriminatorMap({"user" = "User", "administrateur" = "SuperAdmin"})
  * @UniqueEntity(
      *fields = {"username", "email", "telephone"},
      *message = "l'email, le username ou le numéro de téléphone est est déjà utilisé, veuillez choisir un autre"
  * )
+ * @ApiResource(
+ *     normalizationContext = {"groups" = {"admin:read"}},
+ *     denormalizationContext = {"groups" = {"admin:write"}},
+ *     attributes = {
+ *          "security" = "is_granted('ROLE_Super Admin')",
+ *          "security_message" = "vous n'avez pas accés à cette ressource",
+ *          "pagination_enabled" = true,
+ *          "pagination_items_per_page" = 3
+ * },
+ *     routePrefix = "/nopale",
+ *     collectionOperations = {"get",
+ *      "add_user" = {
+ *           "method" = "POST",
+ *           "route_name" = "add_user"}
+ * },
+ *     itemOperations = {"get",
+ *      "edit_user" = {
+ *           "deserialize" = false,
+ *           "method" = "PUT",
+ *           "route_name" = "edit_user"},
+ *      "delete"}
+ * )
+ * @ApiFilter(SearchFilter::class, properties={"profil" : "exact"})
  */
 class User implements UserInterface, PasswordAuthenticatedUserInterface
 {
@@ -25,13 +57,14 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
      * @ORM\Id
      * @ORM\GeneratedValue
      * @ORM\Column(type="integer")
+     * @Groups({"admin:read"})
      */
-    private $id;
+    protected $id;
 
     /**
      * @ORM\Column(type="string", length=180, unique=true)
-     * @Assert\NotBlank
-     * @Assert\NotBlank(message = "le nom d'utilisateur ne peut pas être vide")
+     * @Assert\NotBlank(message="Le nom d'utilisateur ne peut pas etre null")
+     * @Groups({"admin:read"})
      */
     private $username;
 
@@ -43,49 +76,73 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     /**
      * @var string The hashed password
      * @ORM\Column(type="string")
-     * @Assert\NotBlank(message = "le mot de passe ne peut pas être vide")
      */
     private $password;
 
     /**
      * @ORM\Column(type="string", length=255)
+     * @Groups({"admin:read"})
+     *  @Assert\NotBlank(message="Le prénom ne peut pas etre null")
      */
     private $prenom;
 
     /**
      * @ORM\Column(type="string", length=255)
+     * @Groups({"admin:read"})
+     *  @Assert\NotBlank(message="Le nom ne peut pas etre null")
      */
     private $nom;
 
     /**
      * @ORM\Column(type="string", length=255)
+     * @Groups({"admin:read"})
+     *  @Assert\NotBlank(message="Le numéro de téléphone ne peut pas etre null")
      */
     private $telephone;
 
     /**
      * @ORM\Column(type="string", length=255)
+     * @Groups({"admin:read"})
+     *  @Assert\NotBlank(message="L'adresse email ne peut pas etre null")
      */
     private $email;
 
     /**
-     * @ORM\Column(type="blob")
+     * @ORM\Column(type="blob", nullable=true)
+     * @Groups({"admin:read"})
      */
     private $photo;
 
     /**
      * @ORM\Column(type="string", length=255)
+     * @Groups({"admin:read"})
+     *  @Assert\NotBlank(message="L'adresse ne peut pas etre null")
      */
     private $adresse;
 
     /**
      * @ORM\ManyToOne(targetEntity=Profil::class, inversedBy="users")
+     * @Groups({"admin:read"})
+     *  @Assert\NotBlank(message="Le profil ne peut pas etre null")
      */
     private $profil;
+
+    /**
+     * @ORM\Column(type="boolean")
+     */
+    private $isBlocked;
+
+
+    public function __construct()
+    {
+        $this->isBlocked = false;
+    }
 
     public function getId(): ?int
     {
         return $this->id;
     }
+
 
     /**
      * @deprecated since Symfony 5.3, use getUserIdentifier instead
@@ -216,7 +273,11 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
 
     public function getPhoto()
     {
-        return $this->photo;
+        $avatar = $this->photo;
+        if (is_resource($avatar)) {
+            return base64_encode(stream_get_contents($avatar));
+        }
+        return $avatar;
     }
 
     public function setPhoto($photo): self
@@ -246,6 +307,18 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     public function setProfil(?Profil $profil): self
     {
         $this->profil = $profil;
+
+        return $this;
+    }
+
+    public function getIsBlocked(): ?bool
+    {
+        return $this->isBlocked;
+    }
+
+    public function setIsBlocked(bool $isBlocked): self
+    {
+        $this->isBlocked = $isBlocked;
 
         return $this;
     }
